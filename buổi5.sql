@@ -29,3 +29,20 @@ FROM pharmacy_sales
 where cogs>total_sales
 group by manufacturer
 order by total_loss DESC
+--Ex9
+Select *
+from cinema
+where id%2<>0  and description<>'boring'
+order by rating DESC
+--Ex10
+Select teacher_id,
+count (distinct subject_id) as cnt from teacher
+group by teacher_id
+--Ex11
+Select user_id, count(follower_id) as followers_count from followers
+group by user_id
+order by user_id ASC
+--Ex12
+Select class from courses
+group by class
+having count(student)>=5

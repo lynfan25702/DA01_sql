@@ -14,8 +14,11 @@ when x+y>z and x+z>y and z+y>x then 'Yes'
 else 'No'
 end as triangle
 from triangle
---Ex3
-
+--Ex3 câu 3 mình không sure lắm vì chạy k ra kết quả nhưng kbik sai ở đâu
+SELECT round (100 * count(CASE
+when call_category is null or call_category = 'n/a' then 1 else 0
+end)/ count(*),1) as call_percentage
+from callers;
 --Ex4
 select name from customer
 where referee_id <> 2 or referee_id is null

@@ -53,6 +53,7 @@ order by a.page_id
 --Ex1
 select distinct replacement_cost from film
 order by replacement_cost limit 1
+  
 --Ex2
 select 
 case 
@@ -62,6 +63,7 @@ else 'high'
 end category,
 count (*)from film
 group by category
+  
 --Ex3
 select c.title, a.name, c.length
 from category as a join film_category as b
@@ -69,5 +71,43 @@ on a.category_id=b.category_id
 join film as c on b.film_id=c.film_id
 where a.name in ('Drama', 'Sports')
 order by length DESC
+  
 --Ex4
+select a.name, count(c.title) as so_luong
+from category as a join film_category as b
+on a.category_id=b.category_id
+join film as c on b.film_id=c.film_id
+group by a.name
+order by so_luong DESC
+  
+--Ex5
+select a.first_name,a.last_name, count(film_id)as so_luong from
+actor as a join film_actor as b
+on a.actor_id=b.actor_id
+group by first_name, last_name
+order by so_luong DESC
+  
+--Ex6
+select count(a.address_id) as so_luong,b.customer_id from
+address as a left join customer as b
+on a.address_id=b.address_id
+where b.customer_id is null
+group by customer_id
+  
+--Ex7
+select a.city, sum(d.amount) as doanh_thu 
+from city as a join address as b
+on a.city_id=b.city_id
+join customer as c on b.address_id=c.address_id
+join payment as d on c.customer_id=d.customer_id
+group by a.city
+order by doanh_thu DESC
 
+--Ex8 Câu này đáp án trong đề bị nhầm vì ra doanh thu thấp nhất 
+select a.city||','||' '|| e.country as name, sum(d.amount) as doanh_thu
+from country as e join city as a on e.country_id=a.country_id  
+join address as b on a.city_id=b.city_id
+join customer as c on b.address_id=c.address_id
+join payment as d on c.customer_id=d.customer_id
+group by name
+order by doanh_thu DESC

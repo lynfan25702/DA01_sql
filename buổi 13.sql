@@ -6,11 +6,11 @@ select count (distinct company_id) as duplicate_companies
 from CTE 
 where job_count >=2
 --Ex3
-select count(policy_holder_id) as member_count FROM
-(SELECT policy_holder_id, COUNT(case_id) AS call_count
-FROM callers
-GROUP BY policy_holder_id
-HAVING COUNT(case_id) >= 3) as call_records
+select count(policy_holder_id) as member_count from
+(select policy_holder_id, count(case_id) as call_count
+from callers
+group by policy_holder_id
+having count(case_id) >= 3) as call_records
 --Ex6
 SELECT
 Date_format(trans_date, '%Y-%m') AS month,

@@ -11,6 +11,12 @@ select count(policy_holder_id) as member_count from
 from callers
 group by policy_holder_id
 having count(case_id) >= 3) as call_records
+--Ex5
+SELECT a.page_id
+FROM pages as a LEFT JOIN page_likes as b 
+on a.page_id=b.page_id
+where b.page_id is null
+order by page_id 
 --Ex6
 SELECT
 Date_format(trans_date, '%Y-%m') AS month,

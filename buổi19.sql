@@ -40,4 +40,54 @@ Update public.sales_dataset_rfm_prj
 set contactfirstname = initcap(substring (contactfullname, (position ('-' in contactfullname)+1))) 
 
 --Câu 4
+Alter table public.sales_dataset_rfm_prj
+Add column QTR_ID int,
+Add column MONTH_ID int,
+Add column YEAR_ID int
+
+Update public.sales_dataset_rfm_prj
+set month_id = extract (month from orderdate)
+Update public.sales_dataset_rfm_prj
+set year_id = extract (year from orderdate)
+Update public.sales_dataset_rfm_prj
+set qtr_id = 1 where month_id in (1,2,3)
+Update public.sales_dataset_rfm_prj
+set qtr_id = 2 where month_id in (4,5,6)
+Update public.sales_dataset_rfm_prj
+set qtr_id = 3 where month_id in (7,8,9)
+Update public.sales_dataset_rfm_prj
+set qtr_id = 4 where month_id in (10,11,12)
+
+--Câu 5
+with cte as (select Q1 - 1.5*IQR as min_value,
+Q3 + 1.5 * IQR as max_value from 
+(select 
+percentile_cont (0.25) within group(order by QUANTITYORDERED) as Q1,
+percentile_cont (0.75) within group (order by QUANTITYORDERED) as Q3,
+percentile_cont (0.75) within group (order by QUANTITYORDERED) - percentile_cont (0.25) within group (order by QUANTITYORDERED) as IQR
+from public.sales_dataset_rfm_prj) as a)
+
+with twt_outliers as (select * from public.sales_dataset_rfm_prj
+where QUANTITYORDERED < (select min_value from cte)
+or QUANTITYORDERED > (select max_value from cte))
+  
+  --Cách 1 để xử lí outliers
+delete from public.sales_dataset_rfm_prj where QUANTITYORDERED in (select QUANTITYORDERED from twt_outliers)
+  -- Cách 2 để xử lí outliers
+update public.sales_dataset_rfm_prj
+set QUANTITYORDERED = (select avg (QUANTITYORDERED) from public.sales_dataset_rfm_prj)
+where QUANTITYORDERED in (select QUANTITYORDERED from twt_outliers)
+
+--Câu 6 Bạn xem cách làm như này đúng chưa nhé
+Create table SALES_DATASET_RFM_PRJ_CLEAN
+(ORDERNUMBER int, QUANTITYORDERED int , PRICEEACH numeric, 
+ORDERLINENUMBER int , SALES decimal, ORDERDATE date,
+status varchar (50), productline varchar (50), msrp int, productcode varchar (50)
+customername varchar (250), phone varchar (50), addressline1 varchar (250),
+addressline2 varchar (250), city varchar (50), state varchar (50), postalcode varchar (50),
+country varchar (50), territory varchar (50), contactfullname varchar (250), dealsize varchar (50),
+contactlastname varchar (50), contactfirstname varchar (50), qtr_id int, month_id int, year_id int)
+insert into SALES_DATASET_RFM_PRJ_CLEAN 
+select * from public.sales_dataset_rfm_prj
+
 

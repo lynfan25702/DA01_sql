@@ -121,6 +121,33 @@ where a.delivered_at between '2022-01-15' and '2022-04-15'
 group by b.category, dates 
 order by dates
 
+-- Tạo metrics
+/* 1. Tạo dashboard*/
+Create View vw_ecommerce_analyst as
+(
+with cpn_info as (select format_date ('%Y-%m', a.delivered_at) as month,
+format_date ('%Y', a.delivered_at) as year,
+b.category as product_category, 
+round (sum(c.sale_price),2) as TPV, round(sum (c.order_id),2) as TPO, round (sum(b.cost),2) as total_cost
+from bigquery-public-data.thelook_ecommerce.orders as a 
+join bigquery-public-data.thelook_ecommerce.order_items as c
+on a.order_id=c.order_id
+join bigquery-public-data.thelook_ecommerce.products as b on b.id=c.id
+where format_date ('%Y-%m', a.delivered_at) is not null and format_date ('%Y', a.delivered_at) is not null
+group by month, year, product_category
+order by month, year)
+
+select month, year, product_category, TPV, TPO, total_cost,
+round ((TPV - lag(TPV) over (partition by product_category order by year,month))/(lag(TPV) over (partition by product_category order by year,month)),2) as revenue_growth,
+round ((TPO - lag(TPO) over (partition by product_category order by year,month))/(lag(TPO) over (partition by product_category order by year,month)),2) as order_growth,
+round ((TPV-total_cost),2) as total_profit, round (((round ((TPV-total_cost),2))/total_cost),2) as profit_to_cost_ratio
+from cpn_info
+order by month, year, product_category
+)
+
+/*
+
+
 
 
 

@@ -123,7 +123,7 @@ order by dates
 
 -- Tạo metrics
 /* 1. Tạo dashboard*/
-Create View vw_ecommerce_analyst as
+With vw_ecommerce_analyst as
 (
 with cpn_info as (select format_date ('%Y-%m', a.delivered_at) as month,
 format_date ('%Y', a.delivered_at) as year,
@@ -145,15 +145,55 @@ from cpn_info
 order by month, year, product_category
 )
 
-/*
 
-select user_id,format_date ('%Y-%m', first_purchase_date) as cohort_date, created_at, amount, 
-(extract ('year' from created_at) - extract ('year' from first_purchase_date))*12 +
-(extract ('month' from created_at) - extract ('month' from first_purchase_date))+1 as index
+/*2. Tạo cohort table */
+
+with retail_index as (select user_id,format_date ('%Y-%m', first_purchase_date) as cohort_date,
+created_at, amount, 
+(extract (year from created_at) - extract (year from first_purchase_date))*12 +
+(extract (month from created_at) - extract (month from first_purchase_date))+1 as index
 from 
 (select user_id,min (created_at) over (partition by user_id) as first_purchase_date, created_at,
 round (sale_price,2) as amount
-from bigquery-public-data.thelook_ecommerce.order_items) as a
+from bigquery-public-data.thelook_ecommerce.order_items) as a)
+
+, retail_cohort as (select cohort_date, index, 
+count (distinct user_id) as total_users, round (sum (amount),2) as revenue
+from retail_index
+group by cohort_date, index)
+
+--Customer cohort
+, customer_cohort as (select cohort_date,
+sum (case when index = 1 then total_users else 0 end) as m1,
+sum (case when index = 2 then total_users else 0 end) as m2,
+sum (case when index = 3 then total_users else 0 end) as m3,
+sum (case when index = 4 then total_users else 0 end) as m4
+from retail_cohort group by cohort_date order by cohort_date)
+
+--Retention cohort
+, retention_cohort as (select cohort_date,
+(round (100.00 * m1/m1,2)) || '%' as m1,
+(round (100.00 * m2/m1,2)) || '%' as m2,
+(round (100.00 * m3/m1,2)) || '%' as m3,
+(round (100.00 * m4/m1,2)) || '%' as m4
+from customer_cohort)
+
+--Churn cohort
+select cohort_date,
+(100-(round (100.00 * m1/m1,2))) || '%' as m1,
+(100-(round (100.00 * m2/m1,2))) || '%' as m2,
+(100-(round (100.00 * m3/m1,2))) || '%' as m3,
+(100-(round (100.00 * m4/m1,2))) || '%' as m4
+from customer_cohort
+
+--Cohort chart
+https://docs.google.com/spreadsheets/d/1D_lzrh42ZRvR2QrUv1mjsqA6WRLp3nOwg86faEO0kGw/edit#gid=218286079 
+
+/* Insights:
+- Nhìn chung sản phẩm có sự cải thiện theo thời gian vì với từng đợt cohort mới thì lượng khách trung thành cũng tăng theo.
+- Tuy nhiên, sự duy trì của lượng khách trung thành của từng cohort rất kém, chứng tỏ công ty nên xem lại chiến lược giữ chân khách hàng vì 
+theo thời gian số lượng khách hàng sử dụng lại sản phẩm không cao, dưới mức 10% */
+
 
 
 

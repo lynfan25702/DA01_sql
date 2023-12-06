@@ -147,6 +147,15 @@ order by month, year, product_category
 
 /*
 
+select user_id,format_date ('%Y-%m', first_purchase_date) as cohort_date, created_at, amount, 
+(extract ('year' from created_at) - extract ('year' from first_purchase_date))*12 +
+(extract ('month' from created_at) - extract ('month' from first_purchase_date))+1 as index
+from 
+(select user_id,min (created_at) over (partition by user_id) as first_purchase_date, created_at,
+round (sale_price,2) as amount
+from bigquery-public-data.thelook_ecommerce.order_items) as a
+
+
 
 
 
